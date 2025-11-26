@@ -177,6 +177,36 @@ def run_enrichment_eb(campaign_path):
     
     return save_excel(df_result[final_columns], campaign_path, "Enriched_EB")
 
+def run_clay_formatting(campaign_path):
+    """Mode 3: Just format Clay files to the standard Output format."""
+    clay_dir = os.path.join(campaign_path, "Clay")
+    
+    # 1. Load Clay using the existing standardized loader
+    df_clay = process_clay_files(clay_dir)
+    if df_clay.empty: return "Error: Clay data missing."
+
+    print("\n--- Formatting Clay Data ---")
+
+    # 2. Rename standardized internal columns to Final Output names
+    df_clay.rename(columns={
+        'Email_std': 'Email',
+        'FirstName_std': 'First Name',
+        'LastName_std': 'Last Name',
+        'PersonLinkedIn_std': 'Person Linkedin Url',
+        'Title_std': 'Title',
+        'Company_std': 'Company',
+        'CompanyLinkedIn_std': 'Company Linkedin Url'
+    }, inplace=True)
+
+    # 3. Select columns in specific order
+    desired_order = ['Email', 'First Name', 'Last Name', 'Person Linkedin Url', 'Title', 'Company', 'Company Linkedin Url']
+    
+    # Only keep columns that actually exist (in case Title or Email was missing in source)
+    final_columns = [col for col in desired_order if col in df_clay.columns]
+
+    # 4. Save
+    return save_excel(df_clay[final_columns], campaign_path, "Formatted_Clay")
+
 def run_dnc_suppression(campaign_path):
     """Mode 2: Clean Clay data by removing DNC matches."""
     clay_dir = os.path.join(campaign_path, "Clay")

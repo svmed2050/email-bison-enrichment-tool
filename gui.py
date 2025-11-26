@@ -7,7 +7,7 @@ import os
 class App:
     def __init__(self, root):
         self.root = root
-        self.root.title("Growth Automation Tool v2.0")
+        self.root.title("Growth Automation Tool v2.1")
         self.root.geometry("420x280")
         self.root.resizable(False, False)
         
@@ -24,15 +24,17 @@ class App:
         self.mode_label = tk.Label(root, text="Select Operation Mode:", font=("Arial", 10))
         self.mode_label.pack(pady=(5, 5))
 
+        # --- UPDATED MODES LIST ---
         self.modes = {
             "Enrich EB with Clay (Standard)": "enrich",
-            "Clean Clay List (Remove DNC)": "dnc"
+            "Clean Clay List (Remove DNC)": "dnc",
+            "Format Clay List Only (Standardize)": "format_clay"  # <--- NEW OPTION
         }
         
         self.mode_var = tk.StringVar()
         self.mode_combo = ttk.Combobox(root, textvariable=self.mode_var, state="readonly", width=35)
         self.mode_combo['values'] = list(self.modes.keys())
-        self.mode_combo.current(0) # Default to first option
+        self.mode_combo.current(0) 
         self.mode_combo.pack(pady=5)
 
         # Run Button
@@ -40,7 +42,6 @@ class App:
         self.process_button.pack(pady=25, padx=20, fill='x')
 
     def start_processing(self):
-        # Get selected mode
         selected_text = self.mode_var.get()
         mode_key = self.modes[selected_text]
 
@@ -56,10 +57,14 @@ class App:
 
         try:
             result_message = ""
+            
+            # --- UPDATED LOGIC ---
             if mode_key == "enrich":
                 result_message = data_processor.run_enrichment_eb(campaign_path)
             elif mode_key == "dnc":
                 result_message = data_processor.run_dnc_suppression(campaign_path)
+            elif mode_key == "format_clay":
+                result_message = data_processor.run_clay_formatting(campaign_path) # <--- NEW CALL
             
             messagebox.showinfo("Done", result_message)
             
