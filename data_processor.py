@@ -39,6 +39,22 @@ def extract_domain(url):
     except:
         return ""
 
+def remove_duplicates_by_linkedin(df, linkedin_col_name='Person Linkedin Url'):
+    """Removes duplicates based on LinkedIn URL, keeping the first occurrence."""
+    if linkedin_col_name not in df.columns:
+        return df
+    
+    initial_count = len(df)
+    # Удаляем дубликаты, оставляя первое вхождение
+    df_deduped = df.drop_duplicates(subset=[linkedin_col_name], keep='first')
+    
+    removed = initial_count - len(df_deduped)
+    if removed > 0:
+        print(f"--- Deduplication ---")
+        print(f"Removed {removed} duplicates based on '{linkedin_col_name}'.")
+    
+    return df_deduped
+
 # --- FILE LOADERS ---
 
 def process_clay_files(folder_path):
@@ -174,8 +190,12 @@ def run_enrichment_eb(campaign_path):
 
     desired_order = ['Email', 'First Name', 'Last Name', 'Person Linkedin Url', 'Title', 'Company', 'Company Linkedin Url']
     final_columns = [col for col in desired_order if col in df_result.columns]
+
+    # CLEAN DUPLICATES (Added)
+    final_df = df_result[final_columns]
+    final_df = remove_duplicates_by_linkedin(final_df, 'Person Linkedin Url')
     
-    return save_excel(df_result[final_columns], campaign_path, "Enriched_EB")
+    return save_excel(final_df, campaign_path, "Enriched_EB")
 
 def run_clay_formatting(campaign_path):
     """Mode 3: Just format Clay files to the standard Output format."""
@@ -201,11 +221,15 @@ def run_clay_formatting(campaign_path):
     # 3. Select columns in specific order
     desired_order = ['Email', 'First Name', 'Last Name', 'Person Linkedin Url', 'Title', 'Company', 'Company Linkedin Url']
     
-    # Only keep columns that actually exist (in case Title or Email was missing in source)
+    # Only keep columns that actually exist
     final_columns = [col for col in desired_order if col in df_clay.columns]
 
+    # CLEAN DUPLICATES (Added)
+    final_df = df_clay[final_columns]
+    final_df = remove_duplicates_by_linkedin(final_df, 'Person Linkedin Url')
+
     # 4. Save
-    return save_excel(df_clay[final_columns], campaign_path, "Formatted_Clay")
+    return save_excel(final_df, campaign_path, "Formatted_Clay")
 
 def run_dnc_suppression(campaign_path):
     """Mode 2: Clean Clay data by removing DNC matches."""
@@ -273,4 +297,8 @@ def run_dnc_suppression(campaign_path):
     desired_order = ['Email', 'First Name', 'Last Name', 'Person Linkedin Url', 'Title', 'Company', 'Company Linkedin Url']
     final_columns = [col for col in desired_order if col in df_clean.columns]
 
-    return save_excel(df_clean[final_columns], campaign_path, "Cleaned_NoDNC")
+    # CLEAN DUPLICATES (Added)
+    final_df = df_clean[final_columns]
+    final_df = remove_duplicates_by_linkedin(final_df, 'Person Linkedin Url')
+
+    return save_excel(final_df, campaign_path, "Cleaned_NoDNC")
