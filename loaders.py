@@ -4,10 +4,19 @@ import pandas as pd
 import config
 import utils
 
+def get_all_supported_files(folder_path):
+    """Вспомогательная функция: ищет и CSV, и Excel файлы."""
+    extensions = ["*.csv", "*.xlsx", "*.xls"]
+    all_files = []
+    for ext in extensions:
+        all_files.extend(glob.glob(os.path.join(folder_path, ext)))
+    return all_files
+
 def process_clay_files(folder_path):
-    """Читает и нормализует файлы из папки Clay."""
+    """Читает и нормализует файлы из папки Clay (CSV + Excel)."""
     print("\n--- Reading Clay Folder ---")
-    all_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    
+    all_files = get_all_supported_files(folder_path)
     if not all_files: return pd.DataFrame()
     
     processed_dfs = []
@@ -16,7 +25,10 @@ def process_clay_files(folder_path):
     for filename in all_files:
         df = utils.read_file_safely(filename)
         if df is None: continue
-        df.columns = df.columns.str.strip()
+        
+        # Очистка названий колонок от пробелов
+        df.columns = df.columns.astype(str).str.strip()
+        
         print(f"File: {os.path.basename(filename)} -> {len(df)} rows")
         
         # Поиск колонок
@@ -53,15 +65,18 @@ def process_clay_files(folder_path):
     return pd.concat(processed_dfs, ignore_index=True)
 
 def load_simple_folder(folder_path, folder_name):
-    """Простая загрузка всех файлов из папки (для EB и DNC)."""
+    """Простая загрузка всех файлов из папки (CSV + Excel)."""
     print(f"\n--- Reading {folder_name} Folder ---")
-    all_files = glob.glob(os.path.join(folder_path, "*.csv"))
+    
+    all_files = get_all_supported_files(folder_path)
     if not all_files: return pd.DataFrame()
+    
     df_list = []
     for filename in all_files:
         df = utils.read_file_safely(filename)
         if df is not None:
-            df.columns = df.columns.str.strip()
+            df.columns = df.columns.astype(str).str.strip()
             print(f"File: {os.path.basename(filename)} -> {len(df)} rows")
             if len(df) > 0: df_list.append(df)
+            
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()

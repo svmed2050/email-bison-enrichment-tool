@@ -11,7 +11,21 @@ def find_column_case_insensitive(df, possible_names):
     return None
 
 def read_file_safely(filepath):
-    """Умное чтение CSV с перебором разделителей и кодировок."""
+    """
+    Умное чтение файлов: поддерживает CSV (все разделители) и Excel (.xlsx, .xls).
+    """
+    ext = os.path.splitext(filepath)[1].lower()
+
+    # --- ЛОГИКА ДЛЯ EXCEL ---
+    if ext in ['.xlsx', '.xls']:
+        try:
+            # Читаем первую страницу Excel
+            return pd.read_excel(filepath)
+        except Exception as e:
+            print(f"!!! ERROR reading Excel file {os.path.basename(filepath)}: {e}")
+            return None
+
+    # --- ЛОГИКА ДЛЯ CSV ---
     separators = [',', ';', '\t', '|']
     encodings = ['utf-8', 'latin1', 'cp1252', 'utf-8-sig']
 
@@ -23,7 +37,7 @@ def read_file_safely(filepath):
             except Exception:
                 continue
     
-    # Fallback to python engine
+    # Fallback to python engine for stubborn CSVs
     try:
         return pd.read_csv(filepath, sep=None, engine='python', encoding='utf-8', low_memory=False)
     except:
